@@ -1,0 +1,53 @@
+auto_restart:
+  type: world
+  events:
+    on server start:
+      - flag server restart_time:<util.time_now.add[1h]>
+    on delta time secondly every:1:
+      - if <server.has_flag[restart_time]>:
+        - define time_left:<server.flag[restart_time].sub[<util.time_now>]>
+        - if <[time_left].in_seconds> <= 0:
+          - announce "Сервер перезагружается сейчас!"
+          - log "Сервер перезагружен по расписанию." type:info file:restart_log.txt
+          - execute as_server "restart"
+        - else if <[time_left].in_seconds> == 300:
+          - announce "Сервер будет перезагружен через 5 минут."
+        - else if <[time_left].in_seconds> == 60:
+          - announce "Сервер будет перезагружен через 1 минуту."
+        - else if <[time_left].in_seconds> == 30:
+          - announce "Сервер будет перезагружен через 30 секунд."
+
+set_restart_command:
+  type: command
+  name: setrestart
+  description: Устанавливает время авторестарта
+  usage: /setrestart <HH:MM>
+  permission: denizen.setrestart
+  script:
+    - if <context.args.size> != 1:
+      - narrate "Использование: /setrestart <HH:MM>"
+      - stop
+    - define time:<context.args[1]>
+    - if !<[time].matches[\d{2}:\d{2}]>:
+      - narrate "Неверный формат времени. Используйте HH:MM."
+      - stop
+    - define hours:<[time].split[:].get[1]>
+    - define minutes:<[time].split[:].get[2]>
+    - define restart_time:<util.time_now.with_hour[<[hours]>].with_minute[<[minutes]>]>
+    - if <[restart_time].is_before[<util.time_now>]>:
+      - define restart_time:<[restart_time].add[1d]>
+    - flag server restart_time:<[restart_time]>
+    - narrate "Время авторестарта установлено на <[restart_time].format[HH:mm]>"
+
+cancel_restart_command:
+  type: command
+  name: cancelrestart
+  description: Отменяет запланированный авторестарт
+  usage: /cancelrestart
+  permission: denizen.cancelrestart
+  script:
+    - if <server.has_flag[restart_time]>:
+      - flag server restart_time:!
+      - narrate "Запланированный авторестарт отменен."
+    - else:
+      - narrate "Нет запланированного авторестарта."
