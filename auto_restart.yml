@@ -1,11 +1,12 @@
 auto_restart:
   type: world
+  debug: false  # Отключаем отладку для этого скрипта
   events:
     on server start:
       - flag server restart_time:<util.time_now.add[1h]>
     on delta time secondly every:1:
       - if <server.has_flag[restart_time]>:
-        - define time_left:<server.flag[restart_time].sub[<util.time_now>]>
+        - define time_left:<server.flag[restart_time].duration_since[<util.time_now>]>
         - if <[time_left].in_seconds> <= 0:
           - announce "Сервер перезагружается сейчас!"
           - log "Сервер перезагружен по расписанию." type:info file:restart_log.txt
